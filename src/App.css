@@ -1,0 +1,80 @@
+label {
+  display: block;
+  margin-top: 10px;
+}
+
+
+.box-container {
+  padding: 50px;
+  position: fixed;
+  width: 100%;
+  height: 100%;
+  background: red;
+}
+
+.auth-container.auth {
+  max-width: 350px !important;
+  padding: 40px 40px;
+}
+
+.auth {
+  background-color: #f7f7f7;
+  padding: 20px 25px 30px;
+  margin: 0 auto 25px;
+  margin-top: 50px;
+  -moz-border-radius: 2px;
+  -webkit-border-radius: 2px;
+  border-radius: 2px;
+  -moz-box-shadow: 0px 2px 2px rgba(0, 0, 0, 0.3);
+  -webkit-box-shadow: 0px 2px 2px rgba(0, 0, 0, 0.3);
+  box-shadow: 0px 2px 2px rgba(0, 0, 0, 0.3);
+}
+
+.profile-img-card {
+  width: 96px;
+  height: 96px;
+  margin: 0 auto 10px;
+  display: block;
+  -moz-border-radius: 50%;
+  -webkit-border-radius: 50%;
+  border-radius: 50%;
+}
+
+.card-container {
+  display: flex;
+}
+
+.board-container {
+    width: 90%;
+    height: 90%;
+    margin: auto;
+    background: white;
+}
+
+.board {
+    width: 100%;
+    height: 100%;
+}
+
+.project-form {
+  margin: 10px;
+  display: inline-block;
+}
+
+.project-form label{
+  color: white;
+}
+
+.collab-list {
+  position: fixed;
+  top: 100px;
+  right: 20px;
+  list-style-type: none;
+  color: white;
+}
+
+.spinner-container {
+  position: fixed;
+  top:50%;
+  left: 50%;
+}
