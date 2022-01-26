@@ -1,10 +1,8 @@
 import React, { Component } from "react";
-import { Card, Button, Form, Col, Spinner } from 'react-bootstrap';
+import { Card, Button, Form, Spinner } from 'react-bootstrap';
 import { Link } from "react-router-dom";
 import { connect } from "react-redux";
 
-import ProjectsService from "../services/projects.service";
-import EventBus from "../common/EventBus";
 import { projectsFetchById } from "../actions/projects";
 import { boardCreate } from "../actions/boards"
 
@@ -20,28 +18,6 @@ class ProjectDetails extends Component {
   componentDidMount() {
     const { dispatch } = this.props;
     dispatch(projectsFetchById(this.props.match.params.projectId));
-    // ProjectsService.getProjects().then(
-    //   response => {
-    //     console.log('response', response);
-    //     this.setState({
-    //       projects: response.data
-    //     });
-    //   },
-    //   error => {
-    //     this.setState({
-    //       content:
-    //         (error.response &&
-    //           error.response.data &&
-    //           error.response.data.message) ||
-    //         error.message ||
-    //         error.toString()
-    //     });
-    //
-    //     if (error.response && error.response.status === 401) {
-    //       EventBus.dispatch("logout");
-    //     }
-    //   }
-    // );
   }
 
   handleBoardAdd = () => {
@@ -56,7 +32,6 @@ class ProjectDetails extends Component {
   }
 
   render() {
-    console.log('project-dets', this.props.selectedProject);
     return (
       <div>
         <Form className="project-form" >
@@ -106,7 +81,8 @@ function mapStateToProps(state) {
   const { selectedProject } = state.projects;
   const { message } = state.message;
   return {
-    selectedProject
+    selectedProject,
+    message
   };
 }
 

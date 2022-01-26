@@ -6,22 +6,20 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import "./App.css";
 
 import Login from "./components/login.component";
-import Register from "./components/register.component";
 import Home from "./components/home.component";
-import Profile from "./components/profile.component";
+import Register from "./components/register.component";
 import Projects from "./components/projects.component";
 import ProjectDetails from './components/project-details.component';
 import Board from "./components/board.component";
+import ProtectedRoute from "./components/protected.component";
+import AuthVerify from "./common/auth-verify";
 
 import { logout } from "./actions/auth";
 import { clearMessage } from "./actions/message";
 
 import { history } from './helpers/history';
 
-// import AuthVerify from "./common/auth-verify";
 import EventBus from "./common/EventBus";
-
-const ENDPOINT = "http://localhost:8080";
 
 class App extends Component {
   constructor(props) {
@@ -108,16 +106,15 @@ class App extends Component {
 
           <div className="box-container">
             <Switch>
-              <Route exact path={["/", "/home"]} component={Home} />
+              <ProtectedRoute exact path="/" component={Home} />
               <Route exact path="/login" component={Login} />
               <Route exact path="/register" component={Register} />
-              <Route exact path="/projects" component={Projects} />
-              <Route exact path="/project/:projectId" component={ProjectDetails} />
-              <Route exact path="/board/:boardId" component={Board} />
+              <ProtectedRoute path="/projects" component={Projects} />
+              <ProtectedRoute path="/project/:projectId" component={ProjectDetails} />
+              <ProtectedRoute path="/board/:boardId" component={Board} />
             </Switch>
           </div>
-
-          {/* <AuthVerify logOut={this.logOut}/> */}
+          <AuthVerify logOut={this.logOut}/>
         </div>
       </Router>
     );

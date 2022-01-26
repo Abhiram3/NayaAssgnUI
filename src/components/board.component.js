@@ -1,18 +1,15 @@
 import React, { Component } from "react";
-import { Card, Button, Spinner, Modal, Tabs, Tab } from 'react-bootstrap';
-import { Link } from "react-router-dom";
+import { Button, Spinner, Modal, Tabs, Tab } from 'react-bootstrap';
 import { connect } from "react-redux";
 import socketIOClient from "socket.io-client";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faPencilAlt, faFont, faFileImage } from '@fortawesome/free-solid-svg-icons';
-import Dropzone from 'react-dropzone-uploader'
+import Dropzone from 'react-dropzone-uploader';
 
-// import BoardService from "../services/board.service";
-import EventBus from "../common/EventBus";
 import { boardsFetchById, updateBoardById, fetchUploadedImages } from '../actions/boards';
+import { API_URL } from '../constants';
 
 class Board extends Component {
-  timeout;
   canvas;
   ctx;
   socket;
@@ -26,9 +23,6 @@ class Board extends Component {
     super(props);
 
     this.state = {
-      title: 'B1',
-      createdBy: 'Abhiram',
-      collaborators: ['Abhiram', 'Abhiram2', 'Abhiram3'],
       selectedTool: 'pencil',
       toolText:'',
       showImageModal: false,
@@ -44,7 +38,6 @@ class Board extends Component {
   }
 
   componentWillReceiveProps(newProps) {
-    console.log('newProps.savedImage', newProps.savedImage)
     if (newProps.savedImage) {
       var savedImage = new Image();
       var ctx = this.ctx;
@@ -72,8 +65,8 @@ class Board extends Component {
   }
 
   insertText = (text, color, x, y, emit) => {
-    console.log('insertText dets', text, color, x, y, emit)
     this.ctx.fillStyle = this.props.user.color;
+    this.ctx.font = "20px Arial";
     this.ctx.fillText(text, x, y);
     if (!emit) { return; }
     var w = this.canvas.width;
@@ -88,14 +81,13 @@ class Board extends Component {
   }
 
   insertImage = (imageName, x, y, emit) => {
-    console.log('insertImage dets', imageName, x, y, emit);
     const imageToInsert = new Image();
     imageToInsert.crossOrigin = "anonymous";
     var ctx = this.ctx;
     imageToInsert.onload = function() {
       ctx.drawImage(imageToInsert, x, y, 100, 100 * (imageToInsert.height / imageToInsert.width));
     }
-    imageToInsert.src = `http://localhost:8080/uploadedImages/${imageName}`;
+    imageToInsert.src = `${API_URL}uploadedImages/${imageName}`;
     if (!emit) { return; }
     var w = this.canvas.width;
     var h = this.canvas.height;
@@ -108,20 +100,19 @@ class Board extends Component {
   }
 
   onMouseDown = (e) => {
-      console.log('props', this.props);
-      const x = e.clientX - this.offsetX;
-      const y = e.clientY - this.offSetY;
-      const currentColor = this.props.user.color;
-      if (this.state.selectedTool === 'text') {
-        this.insertText(this.state.toolText, currentColor, x, y, true);
-      } else if (this.state.selectedTool === 'image') {
-        this.insertImage(this.state.selectedImageKey, x, y, true);
-      } else {
-        this.drawing = true;
-        this.current.x = e.clientX - this.offsetX;
-        this.current.y = e.clientY - this.offSetY;
-      }
+    const x = e.clientX - this.offsetX;
+    const y = e.clientY - this.offSetY;
+    const currentColor = this.props.user.color;
+    if (this.state.selectedTool === 'text') {
+      this.insertText(this.state.toolText, currentColor, x, y, true);
+    } else if (this.state.selectedTool === 'image') {
+      this.insertImage(this.state.selectedImageKey, x, y, true);
+    } else {
+      this.drawing = true;
+      this.current.x = e.clientX - this.offsetX;
+      this.current.y = e.clientY - this.offSetY;
     }
+  }
 
   onMouseUp = (e) => {
     if (!this.drawing) { return; }
@@ -137,14 +128,11 @@ class Board extends Component {
   }
 
   onDrawingEvent = (data) => {
-    console.log('onDrawingEvent', data);
     var w = this.canvas.width;
     var h = this.canvas.height;
     if (data.type === "text") {
-      console.log('insertText', data);
       this.insertText(data.text, data.color, data.x * w, data.y * h);
     } else if (data.type === "image") {
-      console.log('insertImage', data);
       this.insertImage(data.imageName, data.x * w, data.y * h);
     } else {
       this.drawLine(data.x0 * w, data.y0 * h, data.x1 * w, data.y1 * h, data.color);
@@ -175,7 +163,6 @@ class Board extends Component {
 
   handleBoardSave = (e) => {
     const base64Image = this.canvas.toDataURL("image/png");
-    console.log('base64Image', base64Image);
     const { dispatch } = this.props;
     dispatch(updateBoardById(this.props.match.params.boardId, { savedImage: base64Image}));
   }
@@ -184,10 +171,8 @@ class Board extends Component {
     this.canvas = document.querySelector('#board');
     var canvas = this.canvas;
     this.ctx = canvas.getContext('2d');
-    var ctx = this.ctx;
-    this.socket = socketIOClient("http://localhost:8080");
+    this.socket = socketIOClient(API_URL);
     var socket = this.socket;
-    var color = this.color;
     var canvasPos = canvas.getBoundingClientRect();
     this.offsetX = canvasPos.x;
     this.offSetY = canvasPos.y;
@@ -197,7 +182,6 @@ class Board extends Component {
     canvas.width = parseInt(sketch_style.getPropertyValue('width'));
     canvas.height = parseInt(sketch_style.getPropertyValue('height'));
 
-    console.log('savedImage', this.props.savedImage);
     if (this.props.savedImage) {
       var savedImage = new Image();
       savedImage.src = this.props.savedImage;
@@ -232,16 +216,13 @@ class Board extends Component {
   }
 
   getUploadParams = () => {
-    return { url: 'http://localhost:8080/uploadedImages' }
+    return { url: `${API_URL}uploadedImages` }
   }
 
   handleChangeStatus = ({ meta, remove }, status) => {
-    console.log('handleChangeStatus', meta, status);
-    return { meta: { width: 100 }};
   }
 
   handleSubmit = (files, allFiles) => {
-    console.log(files.map(f => f.meta))
     allFiles.forEach(f => f.remove())
   }
 
@@ -252,7 +233,6 @@ class Board extends Component {
   }
 
   handleImageList = (eventKey) => {
-    console.log("handleImageList", eventKey);
     if (eventKey === "images") {
       const { dispatch } = this.props;
       dispatch(fetchUploadedImages());
@@ -271,7 +251,7 @@ class Board extends Component {
               {(this.props.uploadedImages && this.props.uploadedImages.length) ? (
                 <ul className="uploaded-image-container">
                   {this.props.uploadedImages.map(imageName => {
-                    const imageSrc = `http://localhost:8080/uploadedImages/${imageName}`;
+                    const imageSrc = `${API_URL}uploadedImages/${imageName}`;
                     return (
                       <li
                         onClick={() => this.handleImageSelect(imageName)}
@@ -376,7 +356,8 @@ function mapStateToProps(state) {
     collaborators,
     savedImage,
     uploadedImages,
-    loading
+    loading,
+    message
   };
 }
 

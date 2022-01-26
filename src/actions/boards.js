@@ -1,5 +1,4 @@
 import {
-  BOARD_CREATE,
   BOARD_CREATE_SUCCESS,
   BOARD_CREATE_FAIL,
   SET_MESSAGE,
@@ -15,6 +14,7 @@ import {
 } from "./types";
 
 import BoardService from "../services/board.service";
+import EventBus from "../common/EventBus";
 import { projectsFetchById } from "../actions/projects";
 
 export const boardCreate = (title, projectId) => (dispatch) => {
@@ -32,6 +32,9 @@ export const boardCreate = (title, projectId) => (dispatch) => {
       return projectsFetchById(projectId);
     },
     (error) => {
+      if (error.response && error.response.status === 401) {
+        EventBus.dispatch("logout");
+      }
       const message =
         (error.response &&
           error.response.data &&
@@ -67,6 +70,9 @@ export const boardsFetchById = (id) => (dispatch) => {
       return Promise.resolve();
     },
     (error) => {
+      if (error.response && error.response.status === 401) {
+        EventBus.dispatch("logout");
+      }
       const message =
         (error.response &&
           error.response.data &&
@@ -102,6 +108,9 @@ export const updateBoardById = (id, updateDetails) => (dispatch) => {
       return Promise.resolve();
     },
     (error) => {
+      if (error.response && error.response.status === 401) {
+        EventBus.dispatch("logout");
+      }
       const message =
         (error.response &&
           error.response.data &&
@@ -137,6 +146,9 @@ export const fetchUploadedImages = () => (dispatch) => {
       return Promise.resolve();
     },
     (error) => {
+      if (error.response && error.response.status === 401) {
+        EventBus.dispatch("logout");
+      }
       const message =
         (error.response &&
           error.response.data &&

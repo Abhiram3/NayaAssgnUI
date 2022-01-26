@@ -1,10 +1,8 @@
 import React, { Component } from "react";
-import { Card, Button, Form, Col, Spinner } from 'react-bootstrap';
+import { Card, Button, Form, Spinner } from 'react-bootstrap';
 import { Link } from "react-router-dom";
 import { connect } from "react-redux";
 
-import ProjectsService from "../services/projects.service";
-import EventBus from "../common/EventBus";
 import { projectCreate, projectsFetch } from "../actions/projects";
 
 class Projects extends Component {
@@ -19,32 +17,10 @@ class Projects extends Component {
   componentDidMount() {
     const { dispatch } = this.props;
     dispatch(projectsFetch());
-    // ProjectsService.getProjects().then(
-    //   response => {
-    //     console.log('response', response);
-    //     this.setState({
-    //       projects: response.data
-    //     });
-    //   },
-    //   error => {
-    //     this.setState({
-    //       content:
-    //         (error.response &&
-    //           error.response.data &&
-    //           error.response.data.message) ||
-    //         error.message ||
-    //         error.toString()
-    //     });
-    //
-    //     if (error.response && error.response.status === 401) {
-    //       EventBus.dispatch("logout");
-    //     }
-    //   }
-    // );
   }
 
   handleProjectAdd = () => {
-    const { dispatch, history } = this.props;
+    const { dispatch } = this.props;
     dispatch(projectCreate(this.state.newTitle));
   }
 
@@ -55,7 +31,6 @@ class Projects extends Component {
   }
 
   render() {
-    console.log('projects', this.props.projects, this.props.loading);
     return (
       <div>
         <Form className="project-form" >

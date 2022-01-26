@@ -6,7 +6,7 @@ const API_URL = "http://localhost:8080/";
 class BoardService {
 
   create(title, projectId) {
-    return axios.post(API_URL, {
+    return axios.post(API_URL + 'boards', {
       title,
       projectId
     }, { headers: authHeader() });
