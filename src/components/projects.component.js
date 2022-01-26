@@ -57,16 +57,18 @@ class Projects extends Component {
         { !this.props.loading && this.props.projects.map(project => {
           const projectLink = `/project/${project.id}`;
           return (
-            <Link className="card-link" to={projectLink} key={project.id}>
-              <Card style={{ width: '18rem' }}>
-                <Card.Body>
-                  <Card.Title>{project.title}</Card.Title>
-                  <Card.Text>
-                    This Project is created by {project.createdBy ? project.createdBy.name : "admin"}
-                  </Card.Text>
-                </Card.Body>
-              </Card>
-            </Link>
+            <li className="card-link">
+              <Link to={projectLink} key={project.id}>
+                <Card style={{ width: '18rem' }}>
+                  <Card.Body>
+                    <Card.Title>{project.title}</Card.Title>
+                    <Card.Text>
+                      This Project is created by {project.createdBy ? project.createdBy.name : "admin"}
+                    </Card.Text>
+                  </Card.Body>
+                </Card>
+              </Link>
+            </li>
           );
         }) }
         </div>

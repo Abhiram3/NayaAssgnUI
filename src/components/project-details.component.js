@@ -59,16 +59,18 @@ class ProjectDetails extends Component {
           this.props.selectedProject.boards.map(board => {
             const boardLink = `/board/${board._id}`;
             return (
-              <Link className="card-link" to={boardLink} key={board.id}>
-                <Card style={{ width: '18rem' }}>
-                  <Card.Body>
-                    <Card.Title>{board.title}</Card.Title>
-                    <Card.Text>
-                      This Project is created by {board.createdBy ? board.createdBy.name : 'admin'}
-                    </Card.Text>
-                  </Card.Body>
-                </Card>
-              </Link>
+              <li className="card-link">
+                <Link className="card-link" to={boardLink} key={board.id}>
+                  <Card style={{ width: '18rem' }}>
+                    <Card.Body>
+                      <Card.Title>{board.title}</Card.Title>
+                      <Card.Text>
+                        This Board is created by {board.createdBy ? board.createdBy.name : 'admin'}
+                      </Card.Text>
+                    </Card.Body>
+                  </Card>
+                </Link>
+              </li>
             );
           })}
           </div>

@@ -40,8 +40,9 @@ label {
   border-radius: 50%;
 }
 
-.card-container {
-  display: flex;
+.card-container li{
+  display: inline-block;
+  margin: 10px;
 }
 
 .board-container {
@@ -106,13 +107,12 @@ label {
 }
 
 .uploaded-image-container {
-  display: flex;
-  flex-direction: row;
   list-style-type: none;
 }
 
 .uploaded-image-container li {
   margin: 15px;
+  display: inline-block;
 }
 
 .uploaded-image-list {
@@ -121,4 +121,11 @@ label {
 
 .image-container-active {
   border: 5px solid green;
+}
+
+.collab-color {
+  border-radius: 50%;
+  width: 15px;
+  height: 15px;
+  display: inline-block;
 }

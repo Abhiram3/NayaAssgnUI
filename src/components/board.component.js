@@ -41,6 +41,7 @@ class Board extends Component {
     if (newProps.savedImage) {
       var savedImage = new Image();
       var ctx = this.ctx;
+      ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
       savedImage.onload = function() {
         ctx.drawImage(savedImage, 0, 0);
       };
@@ -65,13 +66,14 @@ class Board extends Component {
   }
 
   insertText = (text, color, x, y, emit) => {
-    this.ctx.fillStyle = this.props.user.color;
+    this.ctx.fillStyle = color;
     this.ctx.font = "20px Arial";
     this.ctx.fillText(text, x, y);
     if (!emit) { return; }
     var w = this.canvas.width;
     var h = this.canvas.height;
     this.socket.emit('drawing', {
+      boardId: this.props.boardId,
       x: x / w,
       y: y / h,
       type: 'text',
@@ -92,6 +94,7 @@ class Board extends Component {
     var w = this.canvas.width;
     var h = this.canvas.height;
     this.socket.emit('drawing', {
+      boardId: this.props.boardId,
       x: x / w,
       y: y / h,
       type: 'image',
@@ -128,6 +131,7 @@ class Board extends Component {
   }
 
   onDrawingEvent = (data) => {
+    if (data.boardId !== this.props.boardId) return;
     var w = this.canvas.width;
     var h = this.canvas.height;
     if (data.type === "text") {
@@ -153,6 +157,7 @@ class Board extends Component {
     var h = this.canvas.height;
 
     this.socket.emit('drawing', {
+      boardId: this.props.boardId,
       x0: x0 / w,
       y0: y0 / h,
       x1: x1 / w,
@@ -181,6 +186,7 @@ class Board extends Component {
     var sketch_style = getComputedStyle(sketch);
     canvas.width = parseInt(sketch_style.getPropertyValue('width'));
     canvas.height = parseInt(sketch_style.getPropertyValue('height'));
+    this.ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     if (this.props.savedImage) {
       var savedImage = new Image();
@@ -256,6 +262,7 @@ class Board extends Component {
                       <li
                         onClick={() => this.handleImageSelect(imageName)}
                         className={this.state.selectedImageKey === imageName ? "image-container-active" : "image-container"}
+                        key={imageName}
                       >
                         <img src={imageSrc} className="uploaded-image-list" />
                       </li>
@@ -310,7 +317,9 @@ class Board extends Component {
           <li>Collaborators: </li>
           {!this.props.loading && this.props.collaborators.length && this.props.collaborators.map(user => {
             return (
-              <li>{user.name}</li>
+              <li key={user._id}>
+                {user.name} <span className="collab-color" style={{ background: user.color }}></span>
+              </li>
             );
           })}
         </ul>
@@ -346,7 +355,7 @@ class Board extends Component {
 
 function mapStateToProps(state) {
   const { uploadedImages, loading } = state.board;
-  const { title, createdBy, collaborators, savedImage } = state.board.details;
+  const { title, createdBy, collaborators, savedImage, id } = state.board.details;
   const { message } = state.message;
   const { user } = state.auth;
   return {
@@ -357,7 +366,8 @@ function mapStateToProps(state) {
     savedImage,
     uploadedImages,
     loading,
-    message
+    message,
+    boardId: id
   };
 }
 
