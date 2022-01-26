@@ -4,13 +4,11 @@ import {
   PROJECT_CREATE_FAIL,
   PROJECTS_FETCH_SUCCESS,
   PROJECTS_FETCH_FAIL,
-  PROJECT_UPDATE_SUCCESS,
-  PROJECT_UPDATE_FAIL,
   PROJECTS_FETCHBYID_SUCCESS,
   PROJECTS_FETCHBYID_FAIL,
-  SET_MESSAGE,
+  SET_MESSAGE
 } from "./types";
-
+import EventBus from "../common/EventBus";
 import ProjectsService from "../services/projects.service";
 
 export const projectCreate = (title) => (dispatch) => {
@@ -28,6 +26,9 @@ export const projectCreate = (title) => (dispatch) => {
       return projectsFetch();
     },
     (error) => {
+      if (error.response && error.response.status === 401) {
+        EventBus.dispatch("logout");
+      }
       const message =
         (error.response &&
           error.response.data &&
@@ -63,6 +64,9 @@ export const projectsFetch = () => (dispatch) => {
       return Promise.resolve();
     },
     (error) => {
+      if (error.response && error.response.status === 401) {
+        EventBus.dispatch("logout");
+      }
       const message =
         (error.response &&
           error.response.data &&
@@ -98,6 +102,9 @@ export const projectsFetchById = (id) => (dispatch) => {
       return Promise.resolve();
     },
     (error) => {
+      if (error.response && error.response.status === 401) {
+        EventBus.dispatch("logout");
+      }
       const message =
         (error.response &&
           error.response.data &&
