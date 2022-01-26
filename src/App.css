@@ -78,3 +78,47 @@ label {
   top:50%;
   left: 50%;
 }
+
+.tools-container {
+  display: flex;
+  flex-direction: row;
+}
+
+.tool {
+  margin: 10px;
+  color: white;
+}
+
+.tool:hover {
+  color: black;
+}
+
+.text-tool-icon {
+  margin-right: 5px;
+}
+
+.active-tool {
+  color: blue;
+}
+
+.dzu-previewImage{
+  width: 100px;
+}
+
+.uploaded-image-container {
+  display: flex;
+  flex-direction: row;
+  list-style-type: none;
+}
+
+.uploaded-image-container li {
+  margin: 15px;
+}
+
+.uploaded-image-list {
+  width: 100px;
+}
+
+.image-container-active {
+  border: 5px solid green;
+}

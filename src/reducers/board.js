@@ -2,11 +2,15 @@ import {
   BOARDS_FETCHBYID,
   BOARDS_FETCHBYID_SUCCESS,
   BOARDS_FETCHBYID_FAIL,
+  UPLOADED_IMAGES_FETCH,
+  UPLOADED_IMAGES_FETCH_SUCCESS,
+  UPLOADED_IMAGES_FETCH_FAIL,
 } from "../actions/types";
 
 const initialState = {
   loading: true,
-  details: {}
+  details: {},
+  uploadedImages: []
 }
 
 export default function (state = initialState, action) {
@@ -31,6 +35,11 @@ export default function (state = initialState, action) {
         loading: false,
         details: {}
       };
+    case UPLOADED_IMAGES_FETCH_SUCCESS:
+      return {
+        ...state,
+        uploadedImages: payload.uploadedImages.data
+      }
     default:
       return state;
   }

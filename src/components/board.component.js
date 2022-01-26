@@ -1,20 +1,26 @@
 import React, { Component } from "react";
-import { Card, Button, Spinner } from 'react-bootstrap';
+import { Card, Button, Spinner, Modal, Tabs, Tab } from 'react-bootstrap';
 import { Link } from "react-router-dom";
 import { connect } from "react-redux";
 import socketIOClient from "socket.io-client";
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faPencilAlt, faFont, faFileImage } from '@fortawesome/free-solid-svg-icons';
+import Dropzone from 'react-dropzone-uploader'
 
 // import BoardService from "../services/board.service";
 import EventBus from "../common/EventBus";
-import { boardsFetchById, updateBoardById } from '../actions/boards';
+import { boardsFetchById, updateBoardById, fetchUploadedImages } from '../actions/boards';
 
 class Board extends Component {
   timeout;
-  isDrawing = false;
   canvas;
   ctx;
-  socket = socketIOClient("http://localhost:8080");
+  socket;
   color;
+  drawing = false;
+  current = {};
+  offsetX;
+  offSetY;
 
   constructor(props) {
     super(props);
@@ -22,7 +28,11 @@ class Board extends Component {
     this.state = {
       title: 'B1',
       createdBy: 'Abhiram',
-      collaborators: ['Abhiram', 'Abhiram2', 'Abhiram3']
+      collaborators: ['Abhiram', 'Abhiram2', 'Abhiram3'],
+      selectedTool: 'pencil',
+      toolText:'',
+      showImageModal: false,
+      selectedImageKey: ''
     };
     this.color = this.props.user.color;
   }
@@ -30,29 +40,6 @@ class Board extends Component {
   componentDidMount() {
     const { dispatch } = this.props;
     dispatch(boardsFetchById(this.props.match.params.boardId));
-    // ProjectsService.getProjects().then(
-    //   response => {
-    //     console.log('response', response);
-    //     this.setState({
-    //       projects: response.data
-    //     });
-    //   },
-    //   error => {
-    //     this.setState({
-    //       content:
-    //         (error.response &&
-    //           error.response.data &&
-    //           error.response.data.message) ||
-    //         error.message ||
-    //         error.toString()
-    //     });
-    //
-    //     if (error.response && error.response.status === 401) {
-    //       EventBus.dispatch("logout");
-    //     }
-    //   }
-    // );
-
     this.drawOnCanvas();
   }
 
@@ -68,6 +55,124 @@ class Board extends Component {
     }
   }
 
+  handleToolSelect = (newTool) => {
+    const { dispatch } = this.props;
+    const updates = { selectedTool: newTool };
+    if (newTool === 'image') {
+      updates.showImageModal = true;
+      dispatch(fetchUploadedImages());
+    }
+    this.setState(updates);
+  }
+
+  handleToolTextChange = (e) => {
+    this.setState({
+      toolText: e.target.value
+    })
+  }
+
+  insertText = (text, color, x, y, emit) => {
+    console.log('insertText dets', text, color, x, y, emit)
+    this.ctx.fillStyle = this.props.user.color;
+    this.ctx.fillText(text, x, y);
+    if (!emit) { return; }
+    var w = this.canvas.width;
+    var h = this.canvas.height;
+    this.socket.emit('drawing', {
+      x: x / w,
+      y: y / h,
+      type: 'text',
+      text,
+      color: this.props.user.color
+    });
+  }
+
+  insertImage = (imageName, x, y, emit) => {
+    console.log('insertImage dets', imageName, x, y, emit);
+    const imageToInsert = new Image();
+    imageToInsert.crossOrigin = "anonymous";
+    var ctx = this.ctx;
+    imageToInsert.onload = function() {
+      ctx.drawImage(imageToInsert, x, y, 100, 100 * (imageToInsert.height / imageToInsert.width));
+    }
+    imageToInsert.src = `http://localhost:8080/uploadedImages/${imageName}`;
+    if (!emit) { return; }
+    var w = this.canvas.width;
+    var h = this.canvas.height;
+    this.socket.emit('drawing', {
+      x: x / w,
+      y: y / h,
+      type: 'image',
+      imageName
+    });
+  }
+
+  onMouseDown = (e) => {
+      console.log('props', this.props);
+      const x = e.clientX - this.offsetX;
+      const y = e.clientY - this.offSetY;
+      const currentColor = this.props.user.color;
+      if (this.state.selectedTool === 'text') {
+        this.insertText(this.state.toolText, currentColor, x, y, true);
+      } else if (this.state.selectedTool === 'image') {
+        this.insertImage(this.state.selectedImageKey, x, y, true);
+      } else {
+        this.drawing = true;
+        this.current.x = e.clientX - this.offsetX;
+        this.current.y = e.clientY - this.offSetY;
+      }
+    }
+
+  onMouseUp = (e) => {
+    if (!this.drawing) { return; }
+    this.drawing = false;
+    this.drawLine(this.current.x, this.current.y, e.clientX - this.offsetX, e.clientY - this.offSetY, this.props.user.color, true);
+  }
+
+  onMouseMove = (e) => {
+    if (!this.drawing) { return; }
+    this.drawLine(this.current.x, this.current.y, e.clientX - this.offsetX, e.clientY - this.offSetY, this.props.user.color, true);
+    this.current.x = e.clientX - this.offsetX;
+    this.current.y = e.clientY - this.offSetY;
+  }
+
+  onDrawingEvent = (data) => {
+    console.log('onDrawingEvent', data);
+    var w = this.canvas.width;
+    var h = this.canvas.height;
+    if (data.type === "text") {
+      console.log('insertText', data);
+      this.insertText(data.text, data.color, data.x * w, data.y * h);
+    } else if (data.type === "image") {
+      console.log('insertImage', data);
+      this.insertImage(data.imageName, data.x * w, data.y * h);
+    } else {
+      this.drawLine(data.x0 * w, data.y0 * h, data.x1 * w, data.y1 * h, data.color);
+    }
+  }
+
+  drawLine = (x0, y0, x1, y1, color, emit) => {
+    this.ctx.beginPath();
+    this.ctx.moveTo(x0, y0);
+    this.ctx.lineTo(x1, y1);
+    this.ctx.strokeStyle = color;
+    this.ctx.lineWidth = 2;
+    this.ctx.stroke();
+    this.ctx.closePath();
+
+    if (!emit) { return; }
+    var w = this.canvas.width;
+    var h = this.canvas.height;
+
+    this.socket.emit('drawing', {
+      x0: x0 / w,
+      y0: y0 / h,
+      x1: x1 / w,
+      y1: y1 / h,
+      color: this.props.user.color
+    });
+  }
+
   handleBoardSave = (e) => {
     const base64Image = this.canvas.toDataURL("image/png");
     console.log('base64Image', base64Image);
@@ -80,72 +185,30 @@ class Board extends Component {
     var canvas = this.canvas;
     this.ctx = canvas.getContext('2d');
     var ctx = this.ctx;
+    this.socket = socketIOClient("http://localhost:8080");
     var socket = this.socket;
     var color = this.color;
     var canvasPos = canvas.getBoundingClientRect();
-    var offsetX = canvasPos.x;
-    var offSetY = canvasPos.y;
+    this.offsetX = canvasPos.x;
+    this.offSetY = canvasPos.y;
 
     var sketch = document.querySelector('#board-container');
     var sketch_style = getComputedStyle(sketch);
     canvas.width = parseInt(sketch_style.getPropertyValue('width'));
     canvas.height = parseInt(sketch_style.getPropertyValue('height'));
 
-    var current = {};
-    var drawing = false;
     console.log('savedImage', this.props.savedImage);
     if (this.props.savedImage) {
       var savedImage = new Image();
       savedImage.src = this.props.savedImage;
-      ctx.drawImage(savedImage, 0, 0);
+      this.ctx.drawImage(savedImage, 0, 0);
     }
-    canvas.addEventListener('mousedown', onMouseDown, false);
-    canvas.addEventListener('mouseup', onMouseUp, false);
-    canvas.addEventListener('mouseout', onMouseUp, false);
-    canvas.addEventListener('mousemove', throttle(onMouseMove, 10), false);
+    canvas.addEventListener('mousedown', this.onMouseDown, false);
+    canvas.addEventListener('mouseup', this.onMouseUp, false);
+    canvas.addEventListener('mouseout', this.onMouseUp, false);
+    canvas.addEventListener('mousemove', throttle(this.onMouseMove, 10), false);
 
-    socket.on('drawing', onDrawingEvent);
-
-    function drawLine(x0, y0, x1, y1, color, emit){
-      ctx.beginPath();
-      ctx.moveTo(x0, y0);
-      ctx.lineTo(x1, y1);
-      ctx.strokeStyle = color;
-      ctx.lineWidth = 2;
-      ctx.stroke();
-      ctx.closePath();
-
-      if (!emit) { return; }
-      var w = canvas.width;
-      var h = canvas.height;
-
-      socket.emit('drawing', {
-        x0: x0 / w,
-        y0: y0 / h,
-        x1: x1 / w,
-        y1: y1 / h,
-        color: color
-      });
-    }
-
-    function onMouseDown(e){
-      drawing = true;
-      current.x = e.clientX - offsetX;
-      current.y = e.clientY - offSetY;
-    }
-
-    function onMouseUp(e){
-      if (!drawing) { return; }
-      drawing = false;
-      drawLine(current.x, current.y, e.clientX - offsetX, e.clientY - offSetY, color, true);
-    }
-
-    function onMouseMove(e){
-      if (!drawing) { return; }
-      drawLine(current.x, current.y, e.clientX - offsetX, e.clientY - offSetY, color, true);
-      current.x = e.clientX - offsetX;
-      current.y = e.clientY - offSetY;
-    }
+    socket.on('drawing', this.onDrawingEvent);
 
 
     // limit the number of events per second
@@ -160,14 +223,92 @@ class Board extends Component {
         }
       };
     }
+  }
 
-    function onDrawingEvent(data){
-      console.log('onDrawingEvent')
-      var w = canvas.width;
-      var h = canvas.height;
-      drawLine(data.x0 * w, data.y0 * h, data.x1 * w, data.y1 * h, data.color);
+  handleImageModalClose = () => {
+    this.setState({
+      showImageModal: false
+    })
+  }
+
+  getUploadParams = () => {
+    return { url: 'http://localhost:8080/uploadedImages' }
+  }
+
+  handleChangeStatus = ({ meta, remove }, status) => {
+    console.log('handleChangeStatus', meta, status);
+    return { meta: { width: 100 }};
+  }
+
+  handleSubmit = (files, allFiles) => {
+    console.log(files.map(f => f.meta))
+    allFiles.forEach(f => f.remove())
+  }
+
+  handleImageSelect = (imageName) => {
+    this.setState({
+      selectedImageKey: imageName
+    });
+  }
+
+  handleImageList = (eventKey) => {
+    console.log("handleImageList", eventKey);
+    if (eventKey === "images") {
+      const { dispatch } = this.props;
+      dispatch(fetchUploadedImages());
     }
+  }
 
+  renderImageModal = () => {
+    return (
+      <Modal show={this.state.showImageModal} size="lg" onHide={this.handleImageModalClose}>
+        <Modal.Header>
+          <Modal.Title>Image Tool</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <Tabs defaultActiveKey="images" transition={false} id="noanim-tab-example" onSelect={this.handleImageList}>
+            <Tab eventKey="images" title="Images">
+              {(this.props.uploadedImages && this.props.uploadedImages.length) ? (
+                <ul className="uploaded-image-container">
+                  {this.props.uploadedImages.map(imageName => {
+                    const imageSrc = `http://localhost:8080/uploadedImages/${imageName}`;
+                    return (
+                      <li
+                        onClick={() => this.handleImageSelect(imageName)}
+                        className={this.state.selectedImageKey === imageName ? "image-container-active" : "image-container"}
+                      >
+                        <img src={imageSrc} className="uploaded-image-list" />
+                      </li>
+                    );
+                  })}
+                </ul>
+              ) : (<p>No Images uploaded!!!</p>)}
+            </Tab>
+            <Tab eventKey="upload" title="Upload">
+              <Dropzone
+                className="image-preview"
+                getUploadParams={this.getUploadParams}
+                onChangeStatus={this.handleChangeStatus}
+                maxFiles={1}
+                multiple={false}
+                canCancel={false}
+                onSubmit={this.handleSubmit}
+                inputContent="Drop A File"
+                styles={{
+                  dropzone: { width: 400, height: 200, minHeight: 200, maxHeight: 250  },
+                  dropzoneActive: { borderColor: 'green' },
+                }}
+              />
+            </Tab>
+          </Tabs>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={this.handleImageModalClose}>
+            Close
+          </Button>
+        </Modal.Footer>
+      </Modal>
+    );
   }
 
   render() {
@@ -185,9 +326,6 @@ class Board extends Component {
           className="board"
           id="board"
         />
-        <Button variant="secondary" type="submit" onClick={this.handleBoardSave}>
-          Save
-        </Button>
         <ul className="collab-list">
           <li>Collaborators: </li>
           {!this.props.loading && this.props.collaborators.length && this.props.collaborators.map(user => {
@@ -196,12 +334,38 @@ class Board extends Component {
             );
           })}
         </ul>
+        <div className="tools-container">
+          <Button variant="secondary" type="submit" onClick={this.handleBoardSave}>
+            Save
+          </Button>
+          <div
+            className={this.state.selectedTool === "pencil" ? "tool active-tool" : "tool"}
+            onClick={(e) => this.handleToolSelect("pencil")}
+          >
+            <FontAwesomeIcon icon={faPencilAlt} />
+          </div>
+          <div
+            className={this.state.selectedTool === "text" ? "tool active-tool" : "tool"}
+            onClick={(e) => this.handleToolSelect("text")}
+          >
+            <FontAwesomeIcon className="text-tool-icon" icon={faFont} />
+            <input type="text" value={this.state.toolText} onChange={this.handleToolTextChange} />
+          </div>
+          <div
+            className={this.state.selectedTool === "image" ? "tool active-tool" : "tool"}
+            onClick={(e) => this.handleToolSelect("image")}
+          >
+            <FontAwesomeIcon icon={faFileImage} />
+          </div>
+        </div>
+        { this.renderImageModal() }
       </div>
     );
   }
 }
 
 function mapStateToProps(state) {
+  const { uploadedImages, loading } = state.board;
   const { title, createdBy, collaborators, savedImage } = state.board.details;
   const { message } = state.message;
   const { user } = state.auth;
@@ -211,7 +375,8 @@ function mapStateToProps(state) {
     createdBy,
     collaborators,
     savedImage,
-    loading: state.board.loading
+    uploadedImages,
+    loading
   };
 }
 

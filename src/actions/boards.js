@@ -8,7 +8,10 @@ import {
   BOARDS_FETCHBYID_FAIL,
   BOARDS_UPDATEBYID,
   BOARDS_UPDATEBYID_SUCCESS,
-  BOARDS_UPDATEBYID_FAIL
+  BOARDS_UPDATEBYID_FAIL,
+  UPLOADED_IMAGES_FETCH,
+  UPLOADED_IMAGES_FETCH_SUCCESS,
+  UPLOADED_IMAGES_FETCH_FAIL
 } from "./types";
 
 import BoardService from "../services/board.service";
@@ -108,6 +111,41 @@ export const updateBoardById = (id, updateDetails) => (dispatch) => {
 
       dispatch({
         type: BOARDS_UPDATEBYID_FAIL,
+      });
+
+      dispatch({
+        type: SET_MESSAGE,
+        payload: message,
+      });
+
+      return Promise.reject();
+    }
+  );
+};
+
+export const fetchUploadedImages = () => (dispatch) => {
+  dispatch({
+    type: UPLOADED_IMAGES_FETCH,
+  });
+  return BoardService.fetchUploadedImages().then(
+    (data) => {
+      dispatch({
+        type: UPLOADED_IMAGES_FETCH_SUCCESS,
+        payload: { uploadedImages: data },
+      });
+
+      return Promise.resolve();
+    },
+    (error) => {
+      const message =
+        (error.response &&
+          error.response.data &&
+          error.response.data.message) ||
+        error.message ||
+        error.toString();
+
+      dispatch({
+        type: UPLOADED_IMAGES_FETCH_FAIL,
       });
 
       dispatch({
